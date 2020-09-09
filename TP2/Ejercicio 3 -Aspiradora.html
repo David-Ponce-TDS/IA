@@ -13,26 +13,35 @@
     crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <style>
+      .table th, .table td {
+        border-top: none !important;
+        border-left: none !important;
+      }
+    </style>
 </head>
 
-<body class="bg-info">
-  <div id="app">
-    <div class="row p-1 m-2">
+<body style="background-image: url('piso 2.webp')">
+  <div id="app" >
+    <div class="row p-1 m-2 w-100" >
       <input class="form-control col-sm-2" type="text" v-model="columnas" placeholder="Columnas">
       <input class="form-control col-sm-2" type="text" v-model="filas" placeholder="Filas">
       <button @click="crear_piso" class="btn btn-dark mr-5"> Crear piso</button>
-      <input class="form-control col-sm-2 " type="text" v-model="suciedades" placeholder="Suciedades">
-      <button @click="ensuciar_piso(15)" class="btn btn-warning">Ensuciar piso</button>
+      <input class="form-control col-sm-2 float-right d-flex" type="text" v-model="suciedades" placeholder="Suciedades">
+      <button @click="ensuciar_piso(15)" class="btn btn-warning float-right">Ensuciar piso</button>
     </div>
     <br>
     <button @click="limpiar_piso" class="btn btn-info">Limpiar piso</button>
     <button @click="encender_aspiradora" class="btn btn-success">Encender aspiradora</button>
     <button @click="apagar_aspiradora" class="btn btn-danger">Apagar aspiradora</button>
-    <div class="p-4">
-      <table class="table table-bordered">
+    <div class="p-4" >
+      <table class="table">
         <tr v-for="(fila,fila_id) in piso" height="60">
-          <td v-for="(col, col_id) in fila.columnas" class="m-0" v-bind:class="{ 'bg-dark':col.suciedad}">
+          <td v-for="(col, col_id) in fila.columnas" class="m-0" >
+            <!--Baldosas -->
             <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
+              style="width:100px;height: 44;position: absolute; z-index: 100;">
+            <img v-if="col.suciedad" :src="suciedad_random(col)" class="img-fluid"
               style="width:50px;height: 44;position: absolute;">
         </tr>
       </table>
@@ -45,7 +54,7 @@
     data: {
       filas: 7,
       columnas: 7,
-      suciedades: 15,
+      suciedades: 30,
       piso: [
       ],
       aspiradora: {
@@ -55,7 +64,8 @@
         encendida: false,
         intervalo: null
       },
-      direcciones:["arriba","derecha","abajo","izquierda"]
+      direcciones:["arriba","derecha","abajo","izquierda"],
+      baldosas_limpias: []
 
     },
     methods: {
@@ -65,7 +75,7 @@
         for (fil = 0; fil < app.filas; fil++) {
           let fila = { columnas: [] };
           for (let col = 0; col < app.columnas; col++) {
-            let columna = { suciedad: false }
+            let columna = {id: fil+'_'+col, suciedad: false }
             fila.columnas.push(columna);
           }
           app.piso.push(fila);
@@ -82,11 +92,18 @@
       ensuciar_piso: function () {
         var app = this;
         app.limpiar_piso();
-        for (let i = 0; i < app.suciedades; i++) {
-          let rand = Math.floor(Math.random() * (app.filas * app.columnas));
-          mod = rand % app.columnas;
+        app.baldosas_limpias = [];
+        x =   app.suciedades < app.filas * app.columnas ? app.suciedades:  app.filas * app.columnas;
+        for (let i = 0; i < x ; i++) {
+          let rand;
+          let mod;
+          do{
+            rand = Math.floor(Math.random() * (app.filas * app.columnas));
+            mod = rand % app.columnas; 
+          }while(app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
           app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
         }
+
       },
       encender_aspiradora: function () {
         var app = this;
@@ -138,9 +155,13 @@
             break;
           }
           let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
-            if(baldosa.suciedad){
-              baldosa.suciedad = false;
-            }
+          baldosa.suciedad = false;
+          if(!app.baldosas_limpias.find(b => b.id == baldosa.id)){
+            app.baldosas_limpias.push(baldosa);
+          }
+          if(app.baldosas_limpias.length == app.filas*app.columnas){
+            app.apagar_aspiradora();
+          }
         }
       },
       activar_sensores: function (direccion) {
@@ -173,7 +194,11 @@
         }
         return nueva_direccion;
       },
-    }
+      suciedad_random: function(col){
+        let rand = (Math.floor(parseInt(col.id)*2) % 5) ;
+        return `suciedad${rand}.png`;
+      }
+    },
   });
   $(document).ready(function () {
     app.crear_piso();
