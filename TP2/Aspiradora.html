@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+    integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+</head>
+
+<body class="bg-info">
+  <div id="app">
+    <div class="row p-1 m-2">
+      <input class="form-control col-sm-2" type="text" v-model="columnas" placeholder="Columnas">
+      <input class="form-control col-sm-2" type="text" v-model="filas" placeholder="Filas">
+      <button @click="crear_piso" class="btn btn-dark mr-5"> Crear piso</button>
+      <input class="form-control col-sm-2 " type="text" v-model="suciedades" placeholder="Suciedades">
+      <button @click="ensuciar_piso(15)" class="btn btn-warning">Ensuciar piso</button>
+    </div>
+    <br>
+    <button @click="limpiar_piso" class="btn btn-info">Limpiar piso</button>
+    <button @click="encender_aspiradora" class="btn btn-success">Encender aspiradora</button>
+    <button @click="apagar_aspiradora" class="btn btn-danger">Apagar aspiradora</button>
+    <div class="p-4">
+      <table class="table table-bordered">
+        <tr v-for="(fila,fila_id) in piso" height="60">
+          <td v-for="(col, col_id) in fila.columnas" class="m-0" v-bind:class="{ 'bg-dark':col.suciedad}">
+            <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
+              style="width:50px;height: 44;position: absolute;">
+        </tr>
+      </table>
+    </div>
+  </div>
+</body>
+<script>
+  var app = new Vue({
+    el: '#app',
+    data: {
+      filas: 7,
+      columnas: 7,
+      suciedades: 15,
+      piso: [
+      ],
+      aspiradora: {
+        fila: 0,
+        columna: 0,
+        direccion: 'derecha',
+        encendida: false,
+        intervalo: null
+      },
+      direcciones:["arriba","derecha","abajo","izquierda"]
+
+    },
+    methods: {
+      crear_piso: function () {
+        var app = this;
+        app.piso = [];
+        for (fil = 0; fil < app.filas; fil++) {
+          let fila = { columnas: [] };
+          for (let col = 0; col < app.columnas; col++) {
+            let columna = { suciedad: false }
+            fila.columnas.push(columna);
+          }
+          app.piso.push(fila);
+        }
+      },
+      limpiar_piso: function () {
+        var app = this;
+        app.piso.forEach(fila => {
+          fila.columnas.forEach(col => {
+            col.suciedad = false;
+          });
+        });
+      },
+      ensuciar_piso: function () {
+        var app = this;
+        app.limpiar_piso();
+        for (let i = 0; i < app.suciedades; i++) {
+          let rand = Math.floor(Math.random() * (app.filas * app.columnas));
+          mod = rand % app.columnas;
+          app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
+        }
+      },
+      encender_aspiradora: function () {
+        var app = this;
+        app.aspiradora.encendida = true;
+        clearInterval(app.aspiradora.intervalo);
+        app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora()}, 150);
+        app.mover_aspiradora();
+      },
+      apagar_aspiradora:function(){
+        var app = this;
+        app.aspiradora.encendida = false;
+      },
+      mover_aspiradora: function () {
+        var app = this;
+        var aspi = app.aspiradora;
+        if (!aspi.encendida) {
+          if (aspi.fila > 0) {// Si no está encendida se vuelva al inicio
+            aspi.direccion = "arriba";
+            setTimeout(function () { aspi.fila--; }, 111);
+          } else if (aspi.columna > 0) {
+            aspi.direccion = "izquierda";
+            setTimeout(function () { aspi.columna--; }, 111);
+          } else {
+            clearInterval(aspi.intervalo);
+            return;
+          }
+        } else {
+          aspi.direccion = app.activar_sensores(aspi.direccion);
+          switch (aspi.direccion) {
+            case "arriba":
+              if (aspi.fila > 0) {
+                aspi.fila--;
+              } 
+            break;
+            case "derecha":
+              if (aspi.columna < app.columnas -1) {
+                aspi.columna++;
+              }
+            break;
+            case "abajo":
+              if (aspi.fila < app.filas-1) {
+                aspi.fila++;
+              }
+            break;
+            case "izquierda":
+              if (aspi.columna > 0) {
+                aspi.columna--;
+              }
+            break;
+          }
+          let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
+            if(baldosa.suciedad){
+              baldosa.suciedad = false;
+            }
+        }
+      },
+      activar_sensores: function (direccion) {
+        var app = this;
+        var aspi = app.aspiradora;
+        var nueva_direccion = direccion;
+        if (app.piso[aspi.fila - 1]) {
+          if (app.piso[aspi.fila - 1].columnas[aspi.columna].suciedad) {
+            nueva_direccion = "arriba";
+          }
+        }
+        if (app.piso[aspi.fila].columnas[aspi.columna+1]) {
+          if (app.piso[aspi.fila].columnas[aspi.columna+1].suciedad) {
+            nueva_direccion = "derecha";
+          }
+        }
+
+        if (app.piso[aspi.fila+1]) {
+          if (app.piso[aspi.fila+1].columnas[aspi.columna].suciedad) {
+            nueva_direccion = "abajo";
+          }
+        }
+        if (app.piso[aspi.fila].columnas[aspi.columna-1]) {
+          if (app.piso[aspi.fila].columnas[aspi.columna-1].suciedad) {
+            nueva_direccion = "izquierda";
+          }
+        }
+        while(direccion == nueva_direccion ){
+          nueva_direccion = app.direcciones[Math.floor(Math.random() * app.direcciones.length)];
+        }
+        return nueva_direccion;
+      },
+    }
+  });
+  $(document).ready(function () {
+    app.crear_piso();
+  })
+
+</script>
+
+</html>
