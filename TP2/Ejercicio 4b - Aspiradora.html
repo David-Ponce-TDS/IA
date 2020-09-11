@@ -71,13 +71,21 @@
     </div>
   </div>
 </body>
+
+
+
+
+//////////////////////////////////////////////////////////
+
+
+
 <script>
   var app = new Vue({
     el: '#app',
     data: {
-      filas: 4,
-      columnas: 4,
-      suciedades: 10,
+      filas: 7,
+      columnas: 7,
+      suciedades: 30,
       piso: [
       ],
       inicio:{
@@ -100,7 +108,7 @@
         ultima: 0,
         lados: false,
         intervalo: null
-      }
+      },
     },
     methods: {
       crear_piso: function () {
@@ -142,14 +150,14 @@
         var app = this;
         app.aspiradora.encendida = true;
         clearInterval(app.aspiradora.intervalo);
-        app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora();}, 150);
+        app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora();}, 222);
       },
       apagar_aspiradora:function(){
         var app = this;
         app.aspiradora.encendida = false;
         clearInterval(app.aspiradora.intervalo);
         app.aspiradora.intervalo = null;
-        app.inicio.intervalo = setInterval(function(){app.volver_inicio();}, 150);
+        app.inicio.intervalo = setInterval(function(){app.volver_inicio();}, 222);
       },
       volver_inicio: function(){
         var app = this;
@@ -193,7 +201,7 @@
               clearInterval(app.aspiradora.intervalo);
               app.aspiradora.intervalo = null;
               aspi.cant_movimientos = 0;
-              app.modo_esquina.intervalo = setInterval(function(){app.rotar_esquinas()}, 150);
+              app.modo_esquina.intervalo = setInterval(function(){app.rotar_esquinas()}, 222);
               app.modo_esquina.ultima = (app.modo_esquina.ultima+1) % 4;
             } 
           }else{
@@ -237,7 +245,7 @@
           app.modo_esquina.lados = false;
           clearInterval(app.modo_esquina.intervalo);
           app.modo_esquina.intervalo = null;
-          app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora()}, 150);
+          app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora()}, 222);
         }
        
       },
@@ -334,7 +342,7 @@
       suciedad_random: function(col){
         let rand = (Math.floor(parseInt(col.id)*2) % 5) ;
         return `suciedad${rand}.png`;
-      }
+      },
     },
   });
   $(document).ready(function () {

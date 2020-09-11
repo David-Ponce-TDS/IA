@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+    integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <style>
+      .table th, .table td {
+        border-top: none !important;
+        border-left: none !important;
+      }
+    </style>
+</head>
+
+<body style="background-image: url('piso 2.webp')">
+  <div id="app" >
+    <div class="row p-1 m-2 w-100" >
+      <input class="form-control col-sm-2" type="text" v-model="columnas" placeholder="Columnas">
+      <input class="form-control col-sm-2" type="text" v-model="filas" placeholder="Filas">
+      <button @click="crear_piso" class="btn btn-dark mr-3"> Crear piso</button>
+      <input class="form-control col-sm-2 " type="text" v-model="suciedades" placeholder="Suciedades">
+      <button @click="ensuciar_piso()" class="btn btn-warning mr-5" >Ensuciar piso</button>
+      <div class="col-sm-4 row">
+        <label for=""><b>Inicio: </b></label> 
+        <select class="form-control col-sm-3" v-model="inicio.fila">
+          <option v-for="f in filas" >
+            {{f-1}}
+          </option>
+        </select>
+        <select class="form-control col-sm-3" v-model="inicio.columna">
+          <option v-for="c in columnas"  >
+            {{c-1}}
+          </option>
+        </select>
+      </div>
+      <br>
+    </div>
+    <div class="row p-1 m-2 w-100">
+      <div class="col-sm-12">
+        <button @click="limpiar_piso" class="btn btn-info">Limpiar piso</button>
+        <button @click="encender_aspiradora" :disabled="aspiradora.encendida" class="btn btn-success">Encender aspiradora</button>
+        <button @click="apagar_aspiradora" :disabled="!aspiradora.encendida" class="btn btn-danger">Apagar aspiradora</button>
+      </div>
+      <div class="col-sm-12">
+        <br> Baldosas: {{filas*columnas}}
+        <br>Baldosas limpias : {{baldosas_limpias.length}} 
+      </div>
+    </div>
+    <div class="row  p-1 ml-2 w-100">      
+      <div class="col-sm-12 " >
+        <table class="table border">
+          <tr v-for="(fila,fila_id) in piso" height="100px">
+            <td v-for="(col, col_id) in fila.columnas" class="m-0" >
+              <!--Baldosas -->
+              <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
+                style="width:100px;;position: absolute; z-index: 100;">
+              <img v-if="col.suciedad" :src="suciedad_random(col)" class="img-fluid"
+                style="width:50px;height: 44;position: absolute;">
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+
+
+
+
+//////////////////////////////////////////////////////////
+
+
+
+<script>
+  var app = new Vue({
+    el: '#app',
+    data: {
+      filas: 7,
+      columnas: 7,
+      suciedades: 30,
+      piso: [
+      ],
+      inicio:{
+        fila: 0,
+        columna:0,
+        intervalo:null,
+      },
+      aspiradora: {
+        fila: 0,
+        columna: 0,
+        direccion: 'derecha',
+        encendida: false,
+        intervalo: null,
+        cant_movimientos: 0,
+      },
+      direcciones:["arriba","derecha","abajo","izquierda"],
+      baldosas_limpias: [],
+      
+      modo_esquina:{
+        ultima: 0,
+        lados: false,
+        intervalo: null
+      },
+    },
+    methods: {
+      crear_piso: function () {
+        var app = this;
+        app.piso = [];
+        for (fil = 0; fil < app.filas; fil++) {
+          let fila = { columnas: [] };
+          for (let col = 0; col < app.columnas; col++) {
+            let columna = {id: (fil+1)*app.columnas+col-1, suciedad: false }
+            fila.columnas.push(columna);
+          }
+          app.piso.push(fila);
+        }
+      },
+      limpiar_piso: function () {
+        var app = this;
+        app.baldosas_limpias = [];
+        app.piso.forEach(fila => {
+          fila.columnas.forEach(col => {
+            col.suciedad = false;
+          });
+        });
+      },
+      ensuciar_piso: function () {
+        var app = this;
+        app.limpiar_piso();
+        x =   app.suciedades < app.filas * app.columnas ? app.suciedades:  app.filas * app.columnas;
+        for (let i = 0; i < x ; i++) {
+          let rand;
+          let mod;
+          do{
+            rand = Math.floor(Math.random() * (app.filas * app.columnas));
+            mod = rand % app.columnas; 
+          }while(app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
+          app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
+        }
+      },
+      encender_aspiradora: function () {
+        var app = this;
+        app.aspiradora.encendida = true;
+        clearInterval(app.aspiradora.intervalo);
+        app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora();}, 222);
+      },
+      apagar_aspiradora:function(){
+        var app = this;
+        app.aspiradora.encendida = false;
+        clearInterval(app.aspiradora.intervalo);
+        app.aspiradora.intervalo = null;
+        app.inicio.intervalo = setInterval(function(){app.volver_inicio();}, 222);
+      },
+      volver_inicio: function(){
+        var app = this;
+        var aspi = app.aspiradora;
+        let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
+        if(aspi.fila == app.inicio.fila){
+          if(aspi.columna == app.inicio.columna){
+            clearInterval(app.inicio.intervalo);
+            app.inicio.intervalo = null;
+          }else if(aspi.columna < app.inicio.columna){
+            aspi.direccion = "derecha";
+            aspi.columna++;
+          }else{
+            aspi.direccion = "izquierda";
+            aspi.columna--;
+          }
+        }else{
+          if(aspi.fila < app.inicio.fila){
+            aspi.direccion = "abajo";
+            aspi.fila++;
+          }else{
+            aspi.direccion = "arriba";
+            aspi.fila--;
+          }        
+        }
+      },
+      mover_aspiradora: function () {
+        var app = this;
+        var aspi = app.aspiradora;
+        let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
+        
+        if(!app.baldosas_limpias.find(b => b.id == baldosa.id)){
+          app.baldosas_limpias.push(baldosa);
+          if(!baldosa.suciedad){
+            aspi.cant_movimientos++;
+          }
+        }else{
+          if(app.modo_esquina.intervalo ==  null) aspi.cant_movimientos++;
+          if(!baldosa.suciedad){
+            if(aspi.cant_movimientos > 18){ //Penalización        
+              clearInterval(app.aspiradora.intervalo);
+              app.aspiradora.intervalo = null;
+              aspi.cant_movimientos = 0;
+              app.modo_esquina.intervalo = setInterval(function(){app.rotar_esquinas()}, 222);
+              app.modo_esquina.ultima = (app.modo_esquina.ultima+1) % 4;
+            } 
+          }else{
+            aspi.cant_movimientos = 0;
+           } 
+        }
+        baldosa.suciedad = false;
+        if(app.baldosas_limpias.length == app.filas*app.columnas){
+          app.apagar_aspiradora();
+        }else{
+          aspi.direccion = app.activar_sensores(aspi.direccion);
+          switch (aspi.direccion) {
+            case "arriba": 
+              if (aspi.fila > 0) {
+                aspi.fila--;
+              } 
+            break;
+            case "derecha":
+              if (aspi.columna < app.columnas -1) {
+                aspi.columna++;
+              }
+            break;
+            case "abajo":
+              if (aspi.fila < app.filas-1) {
+                aspi.fila++;
+              }
+            break;
+            case "izquierda":
+              if (aspi.columna > 0) {
+                aspi.columna--;
+              }
+            break;
+          }
+        }       
+      },
+      rotar_esquinas: function(){
+        var app = this;
+        if(!app.modo_esquina.lados){
+          app.esquina();
+        }else{
+          app.modo_esquina.lados = false;
+          clearInterval(app.modo_esquina.intervalo);
+          app.modo_esquina.intervalo = null;
+          app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora()}, 222);
+        }
+       
+      },
+      esquina: function(){
+        var app = this;
+        var aspi = app.aspiradora;
+        if(!aspi.encendida) app.modo_esquina.ultima = 0;
+
+        switch (app.modo_esquina.ultima) {
+          case 0:
+            if (aspi.fila > 0) {
+              aspi.direccion = "arriba";
+             aspi.fila--; 
+            } else if (aspi.columna > 0) {
+              aspi.direccion = "izquierda";
+              aspi.columna--;
+            }else{
+              app.modo_esquina.lados = true;
+            }
+            break;
+          case 1:
+            if (aspi.fila > 0) {
+              aspi.direccion = "arriba";
+              aspi.fila--;
+            } else if (aspi.columna < app.columnas-1) { 
+              aspi.direccion = "derecha";
+              aspi.columna++;
+            }else{
+              app.modo_esquina.lados = true;
+            }
+            break;
+          case 2:
+            if (aspi.fila < app.filas-1) {
+              aspi.direccion = "abajo";
+              aspi.fila++
+            } else if (aspi.columna < app.columnas-1) {
+              aspi.direccion = "derecha";
+              aspi.columna++;
+            }else{
+              app.modo_esquina.lados = true;
+            }
+            break;
+          case 3:
+            if (aspi.fila < app.filas-1) {
+              aspi.direccion = "abajo";
+              aspi.fila++;
+            } else if (aspi.columna > 0) {
+              aspi.direccion = "izquierda";
+              aspi.columna--;
+            }else{
+              app.modo_esquina.lados = true;
+            }
+            break;
+          default:
+            break;
+        }
+        if(!aspi.encendida && app.modo_esquina.lados){
+          clearInterval(app.aspiradora.intervalo);
+          app.aspiradora.intervalo = null;
+          clearInterval(app.modo_esquina.intervalo);
+          app.modo_esquina.intervalo = null;
+        }
+      },
+      activar_sensores: function (direccion) {
+        var app = this;
+        var aspi = app.aspiradora;
+        var nueva_direccion = direccion;
+        if (app.piso[aspi.fila - 1]) {
+          if (app.piso[aspi.fila - 1].columnas[aspi.columna].suciedad) {
+            nueva_direccion = "arriba";
+          }
+        }
+        if (app.piso[aspi.fila].columnas[aspi.columna+1]) {
+          if (app.piso[aspi.fila].columnas[aspi.columna+1].suciedad) {
+            nueva_direccion = "derecha";
+          }
+        }
+
+        if (app.piso[aspi.fila+1]) {
+          if (app.piso[aspi.fila+1].columnas[aspi.columna].suciedad) {
+            nueva_direccion = "abajo";
+          }
+        }
+        if (app.piso[aspi.fila].columnas[aspi.columna-1]) {
+          if (app.piso[aspi.fila].columnas[aspi.columna-1].suciedad) {
+            nueva_direccion = "izquierda";
+          }
+        }
+        while(direccion == nueva_direccion ){
+          nueva_direccion = app.direcciones[Math.floor(Math.random() * app.direcciones.length)];
+        }
+        return nueva_direccion;
+      },
+      suciedad_random: function(col){
+        let rand = (Math.floor(parseInt(col.id)*2) % 5) ;
+        return `suciedad${rand}.png`;
+      },
+    },
+    computed:{
+      casos: function(){
+        var app = this;
+        var casos_array = [];
+        for (let fila = 0; fila < app.filas; fila++) {
+          for (let columna = 0; columna < app.columnas; columna++) {
+            casos_array.push(
+              {
+                "fila": fila,
+                "columna": columna,
+                "suciedad": true
+              }
+            );
+            casos_array.push(
+              {
+                "fila": fila,
+                "columna": columna,
+                "suciedad": false
+              }
+            );
+          }         
+        }
+        return casos_array;
+      },
+
+    }
+  });
+  $(document).ready(function () {
+    app.crear_piso();
+  })
+
+</script>
+
+</html>
