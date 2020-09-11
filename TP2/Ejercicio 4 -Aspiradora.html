@@ -26,25 +26,48 @@
     <div class="row p-1 m-2 w-100" >
       <input class="form-control col-sm-2" type="text" v-model="columnas" placeholder="Columnas">
       <input class="form-control col-sm-2" type="text" v-model="filas" placeholder="Filas">
-      <button @click="crear_piso" class="btn btn-dark mr-5"> Crear piso</button>
-      <input class="form-control col-sm-2 float-right d-flex" type="text" v-model="suciedades" placeholder="Suciedades">
-      <button @click="ensuciar_piso(15)" class="btn btn-warning float-right">Ensuciar piso</button>
+      <button @click="crear_piso" class="btn btn-dark mr-3"> Crear piso</button>
+      <input class="form-control col-sm-2 " type="text" v-model="suciedades" placeholder="Suciedades">
+      <button @click="ensuciar_piso()" class="btn btn-warning mr-5" >Ensuciar piso</button>
+      <div class="col-sm-4 row">
+        <label for=""><b>Inicio: </b></label> 
+        <select class="form-control col-sm-3" v-model="inicio.fila">
+          <option v-for="f in filas" >
+            {{f-1}}
+          </option>
+        </select>
+        <select class="form-control col-sm-3" v-model="inicio.columna">
+          <option v-for="c in columnas"  >
+            {{c-1}}
+          </option>
+        </select>
+      </div>
+      <br>
     </div>
-    <br>
-    <button @click="limpiar_piso" class="btn btn-info">Limpiar piso</button>
-    <button @click="encender_aspiradora" class="btn btn-success">Encender aspiradora</button>
-    <button @click="apagar_aspiradora" class="btn btn-danger">Apagar aspiradora</button>
-    <div class="p-4" >
-      <table class="table">
-        <tr v-for="(fila,fila_id) in piso" height="60">
-          <td v-for="(col, col_id) in fila.columnas" class="m-0" >
-            <!--Baldosas -->
-            <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
-              style="width:100px;height: 44;position: absolute; z-index: 100;">
-            <img v-if="col.suciedad" :src="suciedad_random(col)" class="img-fluid"
-              style="width:50px;height: 44;position: absolute;">
-        </tr>
-      </table>
+    <div class="row p-1 m-2 w-100">
+      <div class="col-sm-12">
+        <button @click="limpiar_piso" class="btn btn-info">Limpiar piso</button>
+        <button @click="encender_aspiradora" :disabled="aspiradora.encendida" class="btn btn-success">Encender aspiradora</button>
+        <button @click="apagar_aspiradora" :disabled="!aspiradora.encendida" class="btn btn-danger">Apagar aspiradora</button>
+      </div>
+      <div class="col-sm-12">
+        <br> Baldosas: {{filas*columnas}}
+        <br>Baldosas limpias : {{baldosas_limpias.length}} 
+      </div>
+    </div>
+    <div class="row  p-1 ml-2 w-100">      
+      <div class="col-sm-12 " >
+        <table class="table border">
+          <tr v-for="(fila,fila_id) in piso" height="100px">
+            <td v-for="(col, col_id) in fila.columnas" class="m-0" >
+              <!--Baldosas -->
+              <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
+                style="width:100px;;position: absolute; z-index: 100;">
+              <img v-if="col.suciedad" :src="suciedad_random(col)" class="img-fluid"
+                style="width:50px;height: 44;position: absolute;">
+          </tr>
+        </table>
+      </div>
     </div>
   </div>
 </body>
@@ -52,11 +75,16 @@
   var app = new Vue({
     el: '#app',
     data: {
-      filas: 7,
-      columnas: 7,
-      suciedades: 30,
+      filas: 4,
+      columnas: 4,
+      suciedades: 10,
       piso: [
       ],
+      inicio:{
+        fila: 0,
+        columna:0,
+        intervalo:null,
+      },
       aspiradora: {
         fila: 0,
         columna: 0,
@@ -70,8 +98,7 @@
       
       modo_esquina:{
         ultima: 0,
-        lado_v: false,
-        lado_h: false,
+        lados: false,
         intervalo: null
       }
     },
@@ -90,6 +117,7 @@
       },
       limpiar_piso: function () {
         var app = this;
+        app.baldosas_limpias = [];
         app.piso.forEach(fila => {
           fila.columnas.forEach(col => {
             col.suciedad = false;
@@ -99,7 +127,6 @@
       ensuciar_piso: function () {
         var app = this;
         app.limpiar_piso();
-        app.baldosas_limpias = [];
         x =   app.suciedades < app.filas * app.columnas ? app.suciedades:  app.filas * app.columnas;
         for (let i = 0; i < x ; i++) {
           let rand;
@@ -110,7 +137,6 @@
           }while(app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
           app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
         }
-
       },
       encender_aspiradora: function () {
         var app = this;
@@ -121,6 +147,34 @@
       apagar_aspiradora:function(){
         var app = this;
         app.aspiradora.encendida = false;
+        clearInterval(app.aspiradora.intervalo);
+        app.aspiradora.intervalo = null;
+        app.inicio.intervalo = setInterval(function(){app.volver_inicio();}, 150);
+      },
+      volver_inicio: function(){
+        var app = this;
+        var aspi = app.aspiradora;
+        let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
+        if(aspi.fila == app.inicio.fila){
+          if(aspi.columna == app.inicio.columna){
+            clearInterval(app.inicio.intervalo);
+            app.inicio.intervalo = null;
+          }else if(aspi.columna < app.inicio.columna){
+            aspi.direccion = "derecha";
+            aspi.columna++;
+          }else{
+            aspi.direccion = "izquierda";
+            aspi.columna--;
+          }
+        }else{
+          if(aspi.fila < app.inicio.fila){
+            aspi.direccion = "abajo";
+            aspi.fila++;
+          }else{
+            aspi.direccion = "arriba";
+            aspi.fila--;
+          }        
+        }
       },
       mover_aspiradora: function () {
         var app = this;
@@ -134,9 +188,8 @@
           }
         }else{
           if(app.modo_esquina.intervalo ==  null) aspi.cant_movimientos++;
-          baldosa.suciedad = false;
           if(!baldosa.suciedad){
-            if(aspi.cant_movimientos > 10){ //Penalización        
+            if(aspi.cant_movimientos > 18){ //Penalización        
               clearInterval(app.aspiradora.intervalo);
               app.aspiradora.intervalo = null;
               aspi.cant_movimientos = 0;
@@ -147,17 +200,13 @@
             aspi.cant_movimientos = 0;
            } 
         }
-
+        baldosa.suciedad = false;
         if(app.baldosas_limpias.length == app.filas*app.columnas){
           app.apagar_aspiradora();
-        }
-
-        if (!aspi.encendida) {
-          app.esquina();
-        } else {
+        }else{
           aspi.direccion = app.activar_sensores(aspi.direccion);
           switch (aspi.direccion) {
-            case "arriba":
+            case "arriba": 
               if (aspi.fila > 0) {
                 aspi.fila--;
               } 
@@ -178,15 +227,14 @@
               }
             break;
           }
-        }
+        }       
       },
       rotar_esquinas: function(){
         var app = this;
-        if(!app.modo_esquina.lado_v || !app.modo_esquina.lado_h){
+        if(!app.modo_esquina.lados){
           app.esquina();
         }else{
-          app.modo_esquina.lado_v = false;
-          app.modo_esquina.lado_h = false;
+          app.modo_esquina.lados = false;
           clearInterval(app.modo_esquina.intervalo);
           app.modo_esquina.intervalo = null;
           app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora()}, 150);
@@ -196,6 +244,8 @@
       esquina: function(){
         var app = this;
         var aspi = app.aspiradora;
+        if(!aspi.encendida) app.modo_esquina.ultima = 0;
+
         switch (app.modo_esquina.ultima) {
           case 0:
             if (aspi.fila > 0) {
@@ -205,8 +255,7 @@
               aspi.direccion = "izquierda";
               aspi.columna--;
             }else{
-              app.modo_esquina.lado_v = true;
-              app.modo_esquina.lado_h = true;
+              app.modo_esquina.lados = true;
             }
             break;
           case 1:
@@ -217,8 +266,7 @@
               aspi.direccion = "derecha";
               aspi.columna++;
             }else{
-              app.modo_esquina.lado_v = true;
-              app.modo_esquina.lado_h = true;
+              app.modo_esquina.lados = true;
             }
             break;
           case 2:
@@ -229,8 +277,7 @@
               aspi.direccion = "derecha";
               aspi.columna++;
             }else{
-              app.modo_esquina.lado_v = true;
-              app.modo_esquina.lado_h = true;
+              app.modo_esquina.lados = true;
             }
             break;
           case 3:
@@ -241,12 +288,17 @@
               aspi.direccion = "izquierda";
               aspi.columna--;
             }else{
-              app.modo_esquina.lado_v = true;
-              app.modo_esquina.lado_h = true;
+              app.modo_esquina.lados = true;
             }
             break;
           default:
             break;
+        }
+        if(!aspi.encendida && app.modo_esquina.lados){
+          clearInterval(app.aspiradora.intervalo);
+          app.aspiradora.intervalo = null;
+          clearInterval(app.modo_esquina.intervalo);
+          app.modo_esquina.intervalo = null;
         }
       },
       activar_sensores: function (direccion) {
