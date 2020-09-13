@@ -28,10 +28,10 @@
       <input class="form-control col-sm-2" type="text" v-model="filas" placeholder="Filas">
       <button @click="crear_piso" class="btn btn-dark mr-3"> Crear piso</button>
       <input class="form-control col-sm-2 " type="text" v-model="suciedades" placeholder="Suciedades">
-      <button @click="ensuciar_piso()" class="btn btn-warning mr-5" >Ensuciar piso</button>
+      <button @click="ensuciar_piso()" class="btn btn-warning mr-5" id="btn_ensuciar">Ensuciar piso</button>
       <div class="col-sm-4 row">
         <label for=""><b>Inicio: </b></label> 
-        <select class="form-control col-sm-3" v-model="inicio.fila">
+        <select class="form-control col-sm-3" v-model="inicio.y">
           <option v-for="f in filas" >
             {{f-1}}
           </option>
@@ -61,7 +61,7 @@
           <tr v-for="(fila,fila_id) in baldosas" height="100px">
             <td v-for="(col, col_id) in fila.columnas" class="m-0" >
               <!--Baldosas -->
-              <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
+              <img v-if="fila_id == aspiradora.y && col_id == aspiradora.x" :src="aspiradora.direccion+'.png'" class="img-fluid"
                 style="width:100px;;position: absolute; z-index: 100;">
               <img v-if="col.suciedad" :src="suciedad_random(col)" class="img-fluid"
                 style="width:50px;height: 44;position: absolute;">
@@ -144,6 +144,7 @@
           }while(app.baldosas[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
           app.baldosas[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
         }
+        $("#btn_ensuciar").disabled(true);
       },
       encender_aspiradora: function () {
         var app = this;
@@ -376,6 +377,7 @@
   });
   $(document).ready(function () {
     app.crear_piso();
+    setTimeout(() => app.ensuciar_piso(), 555);
   })
 
 </script>
