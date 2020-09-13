@@ -144,7 +144,8 @@
           }while(app.baldosas[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
           app.baldosas[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
         }
-        $("#btn_ensuciar").disabled(true);
+        $("#btn_ensuciar").attr('disabled',true);
+        setTimeout(() => $("#btn_ensuciar").attr('disabled',false),555);
       },
       encender_aspiradora: function () {
         var app = this;
