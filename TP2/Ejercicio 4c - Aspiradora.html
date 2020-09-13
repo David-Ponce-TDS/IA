@@ -58,7 +58,7 @@
     <div class="row  p-1 ml-2 w-100">      
       <div class="col-sm-12 " >
         <table class="table border">
-          <tr v-for="(fila,fila_id) in piso" height="100px">
+          <tr v-for="(fila,fila_id) in baldosas" height="100px">
             <td v-for="(col, col_id) in fila.columnas" class="m-0" >
               <!--Baldosas -->
               <img v-if="fila_id == aspiradora.fila && col_id == aspiradora.columna" :src="aspiradora.direccion+'.png'" class="img-fluid"
@@ -84,7 +84,7 @@
       filas: 3,
       columnas: 3,
       suciedades: 6,
-      piso: [
+      baldosas: [
       ],
       inicio:{
         x: 0,
@@ -112,20 +112,20 @@
     methods: {
       crear_piso: function () {
         var app = this;
-        app.piso = [];
+        app.baldosas = [];
         for (y = 0; y < app.filas; y++) {
           let fila = { columnas: [] };
           for (let x = 0; x < app.columnas; x++) {
             let columna = {id: y == 0 && x == 0 ? 0 : y * (app.columnas) + x, suciedad: false }
             fila.columnas.push(columna);
           }
-          app.piso.push(fila);
+          app.baldosas.push(fila);
         }
       },
       limpiar_piso: function () {
         var app = this;
         app.baldosas_limpias = [];
-        app.piso.forEach(y => {
+        app.baldosas.forEach(y => {
           y.columnas.forEach(x => {
             x.suciedad = false;
           });
@@ -141,8 +141,8 @@
           do{
             rand = Math.floor(Math.random() * (app.filas * app.columnas));
             mod = rand % app.columnas; 
-          }while(app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
-          app.piso[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
+          }while(app.baldosas[Math.floor(rand / app.columnas)].columnas[mod].suciedad);
+          app.baldosas[Math.floor(rand / app.columnas)].columnas[mod].suciedad = true;
         }
       },
       encender_aspiradora: function () {
@@ -161,7 +161,7 @@
       volver_inicio: function(){
         var app = this;
         var aspi = app.aspiradora;
-        let baldosa = app.piso[aspi.y].columnas[aspi.x];
+        let baldosa = app.baldosas[aspi.y].columnas[aspi.x];
         if(aspi.y == app.inicio.y){
           if(aspi.x == app.inicio.x){
             clearInterval(app.inicio.intervalo);
@@ -186,7 +186,7 @@
       mover_aspiradora: function () {
         var app = this;
         var aspi = app.aspiradora;
-        let baldosa = app.piso[aspi.y].columnas[aspi.x];
+        let baldosa = app.baldosas[aspi.y].columnas[aspi.x];
         
         if(!app.baldosas_limpias.find(b => b.id == baldosa.id)){
           app.baldosas_limpias.push(baldosa);
@@ -312,24 +312,24 @@
         var app = this;
         var aspi = app.aspiradora;
         var nueva_direccion = direccion;
-        if (app.piso[aspi.y - 1]) {
-          if (app.piso[aspi.y - 1].columnas[aspi.x].suciedad) {
+        if (app.baldosas[aspi.y - 1]) {
+          if (app.baldosas[aspi.y - 1].columnas[aspi.x].suciedad) {
             nueva_direccion = "arriba";
           }
         }
-        if (app.piso[aspi.y].columnas[aspi.x+1]) {
-          if (app.piso[aspi.y].columnas[aspi.x+1].suciedad) {
+        if (app.baldosas[aspi.y].columnas[aspi.x+1]) {
+          if (app.baldosas[aspi.y].columnas[aspi.x+1].suciedad) {
             nueva_direccion = "derecha";
           }
         }
 
-        if (app.piso[aspi.y+1]) {
-          if (app.piso[aspi.y+1].columnas[aspi.x].suciedad) {
+        if (app.baldosas[aspi.y+1]) {
+          if (app.baldosas[aspi.y+1].columnas[aspi.x].suciedad) {
             nueva_direccion = "abajo";
           }
         }
-        if (app.piso[aspi.y].columnas[aspi.x-1]) {
-          if (app.piso[aspi.y].columnas[aspi.x-1].suciedad) {
+        if (app.baldosas[aspi.y].columnas[aspi.x-1]) {
+          if (app.baldosas[aspi.y].columnas[aspi.x-1].suciedad) {
             nueva_direccion = "izquierda";
           }
         }
@@ -352,19 +352,17 @@
             let casos_suciedad = Math.pow(2,app.filas*app.columnas);
             for (c_s = 0; c_s < casos_suciedad; c_s++) {
               let C = Array();
-              C.x = x_aspi;
-              C.y = y_aspi;
+              C.Ax = x_aspi;
+              C.Ay = y_aspi;
 
               bits = (casos_suciedad-1).toString(2).length;
-              C.piso = Array();
+              C.baldosas = Array();
               for (let b = 0; b < bits; b++) {
                 let x = b % app.columnas;    
                 let y = Math.floor(b / app.columnas);
-                C.piso.push(
+                C.baldosas.push(
                 {
                   "id": y == 0 && x == 0 ? 0 : y * (app.columnas) + x ,
-                  "x": x,
-                  "y": y,
                   "suciedad": ((c_s >> b) & 1) == '1'
                 });               
               }
