@@ -75,27 +75,25 @@
 
 
 
-//////////////////////////////////////////////////////////
-
 
 
 <script>
   var app = new Vue({
     el: '#app',
     data: {
-      filas: 7,
-      columnas: 7,
-      suciedades: 30,
+      filas: 3,
+      columnas: 3,
+      suciedades: 6,
       piso: [
       ],
       inicio:{
-        fila: 0,
-        columna:0,
+        x: 0,
+        y: 0,
         intervalo:null,
       },
       aspiradora: {
-        fila: 0,
-        columna: 0,
+        x: 0,
+        y: 0,
         direccion: 'derecha',
         encendida: false,
         intervalo: null,
@@ -110,14 +108,15 @@
         intervalo: null
       },
     },
+    
     methods: {
       crear_piso: function () {
         var app = this;
         app.piso = [];
-        for (fil = 0; fil < app.filas; fil++) {
+        for (y = 0; y < app.filas; y++) {
           let fila = { columnas: [] };
-          for (let col = 0; col < app.columnas; col++) {
-            let columna = {id: (fil+1)*app.columnas+col-1, suciedad: false }
+          for (let x = 0; x < app.columnas; x++) {
+            let columna = {id: y == 0 && x == 0 ? 0 : y * (app.columnas) + x, suciedad: false }
             fila.columnas.push(columna);
           }
           app.piso.push(fila);
@@ -126,9 +125,9 @@
       limpiar_piso: function () {
         var app = this;
         app.baldosas_limpias = [];
-        app.piso.forEach(fila => {
-          fila.columnas.forEach(col => {
-            col.suciedad = false;
+        app.piso.forEach(y => {
+          y.columnas.forEach(x => {
+            x.suciedad = false;
           });
         });
       },
@@ -162,32 +161,32 @@
       volver_inicio: function(){
         var app = this;
         var aspi = app.aspiradora;
-        let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
-        if(aspi.fila == app.inicio.fila){
-          if(aspi.columna == app.inicio.columna){
+        let baldosa = app.piso[aspi.y].columnas[aspi.x];
+        if(aspi.y == app.inicio.y){
+          if(aspi.x == app.inicio.x){
             clearInterval(app.inicio.intervalo);
             app.inicio.intervalo = null;
-          }else if(aspi.columna < app.inicio.columna){
+          }else if(aspi.x < app.inicio.x){
             aspi.direccion = "derecha";
-            aspi.columna++;
+            aspi.x++;
           }else{
             aspi.direccion = "izquierda";
-            aspi.columna--;
+            aspi.x--;
           }
         }else{
-          if(aspi.fila < app.inicio.fila){
+          if(aspi.y < app.inicio.y){
             aspi.direccion = "abajo";
-            aspi.fila++;
+            aspi.y++;
           }else{
             aspi.direccion = "arriba";
-            aspi.fila--;
+            aspi.y--;
           }        
         }
       },
       mover_aspiradora: function () {
         var app = this;
         var aspi = app.aspiradora;
-        let baldosa = app.piso[aspi.fila].columnas[aspi.columna];
+        let baldosa = app.piso[aspi.y].columnas[aspi.x];
         
         if(!app.baldosas_limpias.find(b => b.id == baldosa.id)){
           app.baldosas_limpias.push(baldosa);
@@ -205,7 +204,7 @@
               app.modo_esquina.ultima = (app.modo_esquina.ultima+1) % 4;
             } 
           }else{
-            aspi.cant_movimientos = 0;
+            aspi.cant_movimientos = 0;// Reinicio de penalización
            } 
         }
         baldosa.suciedad = false;
@@ -215,23 +214,23 @@
           aspi.direccion = app.activar_sensores(aspi.direccion);
           switch (aspi.direccion) {
             case "arriba": 
-              if (aspi.fila > 0) {
-                aspi.fila--;
+              if (aspi.y > 0) {
+                aspi.y--;
               } 
             break;
             case "derecha":
-              if (aspi.columna < app.columnas -1) {
-                aspi.columna++;
+              if (aspi.x < app.columnas -1) {
+                aspi.x++;
               }
             break;
             case "abajo":
-              if (aspi.fila < app.filas-1) {
-                aspi.fila++;
+              if (aspi.y < app.filas - 1) {
+                aspi.y++;
               }
             break;
             case "izquierda":
-              if (aspi.columna > 0) {
-                aspi.columna--;
+              if (aspi.x > 0) {
+                aspi.x--;
               }
             break;
           }
@@ -256,45 +255,45 @@
 
         switch (app.modo_esquina.ultima) {
           case 0:
-            if (aspi.fila > 0) {
+            if (aspi.y > 0) {
               aspi.direccion = "arriba";
-             aspi.fila--; 
-            } else if (aspi.columna > 0) {
+             aspi.y--; 
+            } else if (aspi.x > 0) {
               aspi.direccion = "izquierda";
-              aspi.columna--;
+              aspi.x--;
             }else{
               app.modo_esquina.lados = true;
             }
             break;
           case 1:
-            if (aspi.fila > 0) {
+            if (aspi.y > 0) {
               aspi.direccion = "arriba";
-              aspi.fila--;
-            } else if (aspi.columna < app.columnas-1) { 
+              aspi.y--;
+            } else if (aspi.x < app.columnas-1) { 
               aspi.direccion = "derecha";
-              aspi.columna++;
+              aspi.x++;
             }else{
               app.modo_esquina.lados = true;
             }
             break;
           case 2:
-            if (aspi.fila < app.filas-1) {
+            if (aspi.y < app.filas-1) {
               aspi.direccion = "abajo";
-              aspi.fila++
-            } else if (aspi.columna < app.columnas-1) {
+              aspi.y++
+            } else if (aspi.x < app.columnas-1) {
               aspi.direccion = "derecha";
-              aspi.columna++;
+              aspi.x++;
             }else{
               app.modo_esquina.lados = true;
             }
             break;
           case 3:
-            if (aspi.fila < app.filas-1) {
+            if (aspi.y < app.filas-1) {
               aspi.direccion = "abajo";
-              aspi.fila++;
-            } else if (aspi.columna > 0) {
+              aspi.y++;
+            } else if (aspi.x > 0) {
               aspi.direccion = "izquierda";
-              aspi.columna--;
+              aspi.x--;
             }else{
               app.modo_esquina.lados = true;
             }
@@ -313,24 +312,24 @@
         var app = this;
         var aspi = app.aspiradora;
         var nueva_direccion = direccion;
-        if (app.piso[aspi.fila - 1]) {
-          if (app.piso[aspi.fila - 1].columnas[aspi.columna].suciedad) {
+        if (app.piso[aspi.y - 1]) {
+          if (app.piso[aspi.y - 1].columnas[aspi.x].suciedad) {
             nueva_direccion = "arriba";
           }
         }
-        if (app.piso[aspi.fila].columnas[aspi.columna+1]) {
-          if (app.piso[aspi.fila].columnas[aspi.columna+1].suciedad) {
+        if (app.piso[aspi.y].columnas[aspi.x+1]) {
+          if (app.piso[aspi.y].columnas[aspi.x+1].suciedad) {
             nueva_direccion = "derecha";
           }
         }
 
-        if (app.piso[aspi.fila+1]) {
-          if (app.piso[aspi.fila+1].columnas[aspi.columna].suciedad) {
+        if (app.piso[aspi.y+1]) {
+          if (app.piso[aspi.y+1].columnas[aspi.x].suciedad) {
             nueva_direccion = "abajo";
           }
         }
-        if (app.piso[aspi.fila].columnas[aspi.columna-1]) {
-          if (app.piso[aspi.fila].columnas[aspi.columna-1].suciedad) {
+        if (app.piso[aspi.y].columnas[aspi.x-1]) {
+          if (app.piso[aspi.y].columnas[aspi.x-1].suciedad) {
             nueva_direccion = "izquierda";
           }
         }
@@ -339,36 +338,42 @@
         }
         return nueva_direccion;
       },
-      suciedad_random: function(col){
-        let rand = (Math.floor(parseInt(col.id)*2) % 5) ;
+      suciedad_random: function(x){
+        let rand = (Math.floor(parseInt(x.id)*2) % 5) ;
         return `suciedad${rand}.png`;
       },
     },
     computed:{
       casos: function(){
         var app = this;
-        var casos_array = [];
-        for (let fila = 0; fila < app.filas; fila++) {
-          for (let columna = 0; columna < app.columnas; columna++) {
-            casos_array.push(
-              {
-                "fila": fila,
-                "columna": columna,
-                "suciedad": true
-              }
-            );
-            casos_array.push(
-              {
-                "fila": fila,
-                "columna": columna,
-                "suciedad": false
-              }
-            );
-          }         
-        }
-        return casos_array;
-      },
+        var casos = [];
+        for (let y_aspi = 0; y_aspi < app.filas; y_aspi++) {
+          for (let x_aspi = 0; x_aspi < app.columnas; x_aspi++) {
+            let casos_suciedad = Math.pow(2,app.filas*app.columnas);
+            for (c_s = 0; c_s < casos_suciedad; c_s++) {
+              let C = Array();
+              C.x = x_aspi;
+              C.y = y_aspi;
 
+              bits = (casos_suciedad-1).toString(2).length;
+              C.piso = Array();
+              for (let b = 0; b < bits; b++) {
+                let x = b % app.columnas;    
+                let y = Math.floor(b / app.columnas);
+                C.piso.push(
+                {
+                  "id": y == 0 && x == 0 ? 0 : y * (app.columnas) + x ,
+                  "x": x,
+                  "y": y,
+                  "suciedad": ((c_s >> b) & 1) == '1'
+                });               
+              }
+              casos.push(C);
+            }
+          }   
+        }  
+        return casos;
+      }
     }
   });
   $(document).ready(function () {
