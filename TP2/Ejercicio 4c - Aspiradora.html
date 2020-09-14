@@ -81,8 +81,8 @@
   var app = new Vue({
     el: '#app',
     data: {
-      filas: 3,
-      columnas: 3,
+      filas: 7,
+      columnas: 7,
       suciedades: 6,
       baldosas: [
       ],
@@ -105,7 +105,8 @@
       modo_esquina:{
         ultima: 0,
         lados: false,
-        intervalo: null
+        intervalo: null,
+        direccion: null
       },
     },
     
@@ -198,10 +199,11 @@
         }else{
           if(app.modo_esquina.intervalo ==  null) aspi.cant_movimientos++;
           if(!baldosa.suciedad){
-            if(aspi.cant_movimientos > 18){ //Penalización        
+            if(aspi.cant_movimientos > 10){ //Penalización        
               clearInterval(app.aspiradora.intervalo);
               app.aspiradora.intervalo = null;
               aspi.cant_movimientos = 0;
+              app.modo_esquina.direccion = aspi.direccion;
               app.modo_esquina.intervalo = setInterval(function(){app.rotar_esquinas()}, 222);
               app.modo_esquina.ultima = (app.modo_esquina.ultima+1) % 4;
             } 
@@ -244,7 +246,6 @@
           app.esquina();
         }else{
           app.modo_esquina.lados = false;
-          clearInterval(app.modo_esquina.intervalo);
           app.modo_esquina.intervalo = null;
           app.aspiradora.intervalo = setInterval(function(){app.mover_aspiradora()}, 222);
         }
@@ -254,53 +255,71 @@
         var app = this;
         var aspi = app.aspiradora;
         if(!aspi.encendida) app.modo_esquina.ultima = 0;
-
+        var aspi = app.aspiradora;
         switch (app.modo_esquina.ultima) {
-          case 0:
-            if (aspi.y > 0) {
-              aspi.direccion = "arriba";
-             aspi.y--; 
-            } else if (aspi.x > 0) {
-              aspi.direccion = "izquierda";
-              aspi.x--;
-            }else{
+          case 0://Arriba Izquierda
+            if (aspi.y == 0 && aspi.x == 0) {
               app.modo_esquina.lados = true;
+            }else{
+              let dir_aspi = ((app.modo_esquina.direccion == "arriba" && aspi.y > 0) || aspi.x == 0) ? "arriba" : "izquierda";
+              if(dir_aspi == "arriba"){
+                aspi.y--; 
+                aspi.direccion = "arriba";
+                app.modo_esquina.direccion = "izquierda";
+              }else{
+                aspi.x--;
+                aspi.direccion = "izquierda";
+                app.modo_esquina.direccion = "arriba";
+              }
             }
             break;
-          case 1:
-            if (aspi.y > 0) {
-              aspi.direccion = "arriba";
-              aspi.y--;
-            } else if (aspi.x < app.columnas-1) { 
-              aspi.direccion = "derecha";
-              aspi.x++;
-            }else{
+          case 1://Arriba Derecha
+            if (aspi.y == 0 && aspi.x == app.columnas-1) {
               app.modo_esquina.lados = true;
+            }else{
+              let dir_aspi = ((app.modo_esquina.direccion == "arriba" && aspi.y > 0) || aspi.x == app.columnas-1) ? "arriba" : "derecha";
+              if(dir_aspi == "arriba"){
+                aspi.y--; 
+                aspi.direccion = "arriba";
+                app.modo_esquina.direccion = "derecha";
+              }else{
+                aspi.x++;
+                aspi.direccion = "derecha";
+                app.modo_esquina.direccion = "arriba";
+              }
             }
             break;
-          case 2:
-            if (aspi.y < app.filas-1) {
-              aspi.direccion = "abajo";
-              aspi.y++
-            } else if (aspi.x < app.columnas-1) {
-              aspi.direccion = "derecha";
-              aspi.x++;
-            }else{
+          case 2://Abajo Derecha
+            if (aspi.y == app.filas-1 && aspi.x == app.columnas-1) {
               app.modo_esquina.lados = true;
+            }else{
+              let dir_aspi = ((app.modo_esquina.direccion == "abajo" && aspi.y < app.filas-1)|| aspi.x == app.columnas-1) ? "abajo" : "derecha";
+              if(dir_aspi == "abajo"){
+                aspi.y++; 
+                aspi.direccion = "abajo";
+                app.modo_esquina.direccion = "derecha";
+              }else{
+                aspi.x++;
+                aspi.direccion = "derecha";
+                app.modo_esquina.direccion = "abajo";
+              }
             }
             break;
-          case 3:
-            if (aspi.y < app.filas-1) {
-              aspi.direccion = "abajo";
-              aspi.y++;
-            } else if (aspi.x > 0) {
-              aspi.direccion = "izquierda";
-              aspi.x--;
-            }else{
+          case 3://Abajo Izquierda
+          if (aspi.y == app.filas-1 && aspi.x == 0) {
               app.modo_esquina.lados = true;
+            }else{
+              let dir_aspi = ((app.modo_esquina.direccion == "abajo" && aspi.y < app.filas-1)|| aspi.x == 0) ? "abajo" : "izquierda";
+              if(dir_aspi == "abajo"){
+                aspi.y++; 
+                aspi.direccion = "abajo";
+                app.modo_esquina.direccion = "izquierda";
+              }else{
+                aspi.x--;
+                aspi.direccion = "izquierda";
+                app.modo_esquina.direccion = "abajo";
+              }
             }
-            break;
-          default:
             break;
         }
         if(!aspi.encendida && app.modo_esquina.lados){
@@ -314,28 +333,33 @@
         var app = this;
         var aspi = app.aspiradora;
         var nueva_direccion = direccion;
+        var basura = false;
         if (app.baldosas[aspi.y - 1]) {
           if (app.baldosas[aspi.y - 1].columnas[aspi.x].suciedad) {
             nueva_direccion = "arriba";
+            basura = true;
           }
         }
         if (app.baldosas[aspi.y].columnas[aspi.x+1]) {
           if (app.baldosas[aspi.y].columnas[aspi.x+1].suciedad) {
             nueva_direccion = "derecha";
+            basura = true;
           }
         }
-
+        
         if (app.baldosas[aspi.y+1]) {
           if (app.baldosas[aspi.y+1].columnas[aspi.x].suciedad) {
             nueva_direccion = "abajo";
+            basura = true;
           }
         }
         if (app.baldosas[aspi.y].columnas[aspi.x-1]) {
           if (app.baldosas[aspi.y].columnas[aspi.x-1].suciedad) {
             nueva_direccion = "izquierda";
+            basura = true;
           }
         }
-        while(direccion == nueva_direccion ){
+        while(!basura && direccion == nueva_direccion ){
           nueva_direccion = app.direcciones[Math.floor(Math.random() * app.direcciones.length)];
         }
         return nueva_direccion;
